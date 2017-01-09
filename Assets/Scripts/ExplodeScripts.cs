@@ -10,16 +10,15 @@ public class ExplodeScripts : MonoBehaviour
         public Transform transform;
         public Vector3 startPos;
         public Vector3 endPos;
-		public Quaternion startQuation;
     }
 
     [Range(1, 5)]
     public float radius = 1;
-    public float smooth = 100;
+    public float smooth = 5;
     private Vector3 center;
     private bool explode;
     private bool recover;
-    public float processTime = 1.3f;
+    public float proseeTime = 1.0f;
     private float exStartTime = 0.0f;
     private float reStartTime = 0.0f;
 
@@ -32,12 +31,6 @@ public class ExplodeScripts : MonoBehaviour
     void Start()
     {
         stuffs = new Stuff[transform.childCount];
-		var local = Vector3.zero;
-		foreach (Transform trans in transform) 
-		{
-			local +=trans.GetComponent<MeshFilter> ().mesh.bounds.center;
-		}
-		center = local / transform.childCount;
         for(int i = 0; i < transform.childCount; i++)
         {
             Stuff stuff = new Stuff();
@@ -45,13 +38,15 @@ public class ExplodeScripts : MonoBehaviour
 
             stuff.transform = transform.GetChild(i);
             stuff.startPos = stuff.transform.position;
-			var oc = stuff.transform.GetComponent<MeshFilter> ().mesh.bounds.center;
-			var direction = oc - center;
+            var direction = stuff.startPos - center;
             var offset = direction * radius * 2;
-			stuff.endPos =  stuff.startPos + offset;
-			stuff.startQuation = stuff.transform.localRotation;
+            stuff.endPos = stuff.startPos + offset;
         }
-        
+        foreach (Transform trans in transform)
+        {
+
+
+        }
     }
 
     // Update is called once per frame
@@ -59,6 +54,11 @@ public class ExplodeScripts : MonoBehaviour
     {
         if (explode)
         {
+            if(Time.time - exStartTime > proseeTime)
+            {
+                exStartTime = 0;
+                explode = false;
+            }
             foreach (Stuff s in stuffs)
             {
                 if (Translate2EndPos(s))
@@ -71,7 +71,11 @@ public class ExplodeScripts : MonoBehaviour
 
         if (recover)
         {
-           
+            if (Time.time - reStartTime > proseeTime)
+            {
+                reStartTime = 0;
+                recover = false;
+            }
             foreach (Stuff s in stuffs)
             {
 
@@ -87,25 +91,17 @@ public class ExplodeScripts : MonoBehaviour
 
     private bool Translate2EndPos(Stuff stuff)
     {
-		if (Time.time - exStartTime > processTime || Vector3.Magnitude (stuff.transform.position - stuff.endPos) <= float.Epsilon) 
-		{
-			stuff.transform.position = stuff.endPos;
-			return true;
-		}
-		stuff.transform.position = Vector3.Lerp(stuff.transform.position, stuff.endPos,  Time.deltaTime * smooth);
+        if (Vector3.Magnitude( stuff.transform.position -stuff.endPos) <= float.Epsilon)
+            return true;
+        stuff.transform.position = Vector3.Lerp(stuff.transform.position, stuff.endPos, Time.deltaTime * smooth);
         return false;
 
     }
     private bool Translate2StartPos(Stuff stuff)
     {
-		if (Time.time - reStartTime > processTime || Vector3.Magnitude (stuff.transform.position - stuff.startPos) <= float.Epsilon) 
-		{
-			stuff.transform.position = stuff.startPos;
-			stuff.transform.localRotation = stuff.startQuation;
-			return true;
-		}
-		stuff.transform.position = Vector3.Lerp(stuff.transform.position, stuff.startPos,Time.deltaTime * smooth);
-		stuff.transform.localRotation = Quaternion.Lerp (stuff.transform.localRotation, stuff.startQuation,Time.deltaTime * smooth);
+        if (Vector3.Magnitude(stuff.transform.position - stuff.startPos) <= float.Epsilon)
+            return true;
+        stuff.transform.position = Vector3.Lerp(stuff.transform.position, stuff.startPos, Time.deltaTime * smooth);
         return false;
 
     }
